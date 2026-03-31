@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/app_db
+    username: app_user
+    password: app_password
+
+logging:
+  level:
+    root: INFO
+    com.example.app: DEBUG
+    org.springframework.security: DEBUG
