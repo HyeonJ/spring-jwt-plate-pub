@@ -4,6 +4,11 @@ spring:
     username: app_user
     password: app_password
 
+# 개발용 JWT Secret (Base64 인코딩, 최소 256bit)
+# 운영에서는 반드시 환경변수로 주입할 것
+jwt:
+  secret: dGhpcyBpcyBhIGRldmVsb3BtZW50IG9ubHkgc2VjcmV0IGtleSBkbyBub3QgdXNl
+
 logging:
   level:
     root: INFO

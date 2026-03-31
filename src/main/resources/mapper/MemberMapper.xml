@@ -4,19 +4,19 @@
 
 <mapper namespace="com.example.app.mapper.MemberMapper">
 
-    <select id="findById" resultType="map">
+    <select id="findById" resultType="com.example.app.dto.MemberDto">
         SELECT id, email, password, name, created_at
         FROM member
         WHERE id = #{id}
     </select>
 
-    <select id="findByEmail" resultType="map">
+    <select id="findByEmail" resultType="com.example.app.dto.MemberDto">
         SELECT id, email, password, name, created_at
         FROM member
         WHERE email = #{email}
     </select>
 
-    <insert id="insert" parameterType="map" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+    <insert id="insert" parameterType="com.example.app.dto.MemberDto" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
         INSERT INTO member (email, password, name)
         VALUES (#{email}, #{password}, #{name})
     </insert>
@@ -29,18 +29,18 @@
                           expires_at = EXCLUDED.expires_at
     </insert>
 
-    <select id="findRefreshToken" resultType="map">
+    <delete id="deleteRefreshToken">
+        DELETE
+        FROM refresh_token
+        WHERE member_id = #{memberId}
+    </delete>
+
+    <select id="findRefreshToken" resultType="com.example.app.dto.RefreshTokenDto">
         SELECT rt.member_id, rt.token, rt.expires_at, m.email
         FROM refresh_token rt
                  JOIN member m ON m.id = rt.member_id
         WHERE rt.token = #{refreshToken}
           AND rt.expires_at > NOW()
     </select>
-
-    <delete id="deleteRefreshToken">
-        DELETE
-        FROM refresh_token
-        WHERE member_id = #{memberId}
-    </delete>
 
 </mapper>

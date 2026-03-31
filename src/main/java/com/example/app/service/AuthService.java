@@ -1,6 +1,8 @@
 package com.example.app.service;
 
 import com.example.app.dto.LoginRequest;
+import com.example.app.dto.MemberDto;
+import com.example.app.dto.RefreshTokenDto;
 import com.example.app.dto.SignupRequest;
 import com.example.app.dto.TokenResponse;
 import com.example.app.exception.CustomException;
@@ -12,9 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -29,15 +28,15 @@ public class AuthService {
     public void signup(SignupRequest request) {
         log.info("[signup] email={}", request.getEmail());
 
-        Map<String, Object> existing = memberMapper.findByEmail(request.getEmail());
+        MemberDto existing = memberMapper.findByEmail(request.getEmail());
         if (existing != null) {
             throw new CustomException(ErrorCode.DUPLICATE_EMAIL);
         }
 
-        Map<String, Object> member = new HashMap<>();
-        member.put("email", request.getEmail());
-        member.put("password", passwordEncoder.encode(request.getPassword()));
-        member.put("name", request.getName());
+        MemberDto member = new MemberDto();
+        member.setEmail(request.getEmail());
+        member.setPassword(passwordEncoder.encode(request.getPassword()));
+        member.setName(request.getName());
         memberMapper.insert(member);
 
         log.info("[signup] 회원가입 완료 email={}", request.getEmail());
@@ -47,20 +46,18 @@ public class AuthService {
     public TokenResponse login(LoginRequest request) {
         log.info("[login] email={}", request.getEmail());
 
-        Map<String, Object> member = memberMapper.findByEmail(request.getEmail());
-        if (member == null || !passwordEncoder.matches(request.getPassword(), (String) member.get("password"))) {
+        MemberDto member = memberMapper.findByEmail(request.getEmail());
+        if (member == null || !passwordEncoder.matches(request.getPassword(), member.getPassword())) {
             throw new CustomException(ErrorCode.INVALID_CREDENTIALS);
         }
 
-        Long memberId = ((Number) member.get("id")).longValue();
-        String email = (String) member.get("email");
+        String accessToken = jwtProvider.createAccessToken(member.getId(), member.getEmail());
+        String refreshToken = jwtProvider.createRefreshToken(member.getId(), member.getEmail());
 
-        String accessToken = jwtProvider.createAccessToken(memberId, email);
-        String refreshToken = jwtProvider.createRefreshToken(memberId, email);
+        memberMapper.deleteRefreshToken(member.getId());
+        memberMapper.saveRefreshToken(member.getId(), refreshToken);
 
-        memberMapper.saveRefreshToken(memberId, refreshToken);
-
-        log.info("[login] 로그인 성공 memberId={}", memberId);
+        log.info("[login] 로그인 성공 memberId={}", member.getId());
         return TokenResponse.of(accessToken, refreshToken, jwtProvider.getAccessTokenExpiration());
     }
 
@@ -68,20 +65,18 @@ public class AuthService {
     public TokenResponse refresh(String refreshToken) {
         log.info("[refresh] 토큰 갱신 요청");
 
-        Map<String, Object> tokenInfo = memberMapper.findRefreshToken(refreshToken);
+        RefreshTokenDto tokenInfo = memberMapper.findRefreshToken(refreshToken);
         if (tokenInfo == null) {
             throw new CustomException(ErrorCode.REFRESH_TOKEN_NOT_FOUND);
         }
 
-        Long memberId = ((Number) tokenInfo.get("member_id")).longValue();
-        String email = (String) tokenInfo.get("email");
+        String newAccessToken = jwtProvider.createAccessToken(tokenInfo.getMemberId(), tokenInfo.getEmail());
+        String newRefreshToken = jwtProvider.createRefreshToken(tokenInfo.getMemberId(), tokenInfo.getEmail());
 
-        String newAccessToken = jwtProvider.createAccessToken(memberId, email);
-        String newRefreshToken = jwtProvider.createRefreshToken(memberId, email);
+        memberMapper.deleteRefreshToken(tokenInfo.getMemberId());
+        memberMapper.saveRefreshToken(tokenInfo.getMemberId(), newRefreshToken);
 
-        memberMapper.saveRefreshToken(memberId, newRefreshToken);
-
-        log.info("[refresh] 토큰 갱신 완료 memberId={}", memberId);
+        log.info("[refresh] 토큰 갱신 완료 memberId={}", tokenInfo.getMemberId());
         return TokenResponse.of(newAccessToken, newRefreshToken, jwtProvider.getAccessTokenExpiration());
     }
 
