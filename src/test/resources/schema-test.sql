@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS refresh_token;
 DROP TABLE IF EXISTS member;
 
 CREATE TABLE member (
-    id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     email      VARCHAR(255) NOT NULL UNIQUE,
     password   VARCHAR(255) NOT NULL,
     name       VARCHAR(100) NOT NULL,
@@ -10,7 +10,7 @@ CREATE TABLE member (
 );
 
 CREATE TABLE refresh_token (
-    id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     member_id  BIGINT       NOT NULL UNIQUE,
     token      TEXT         NOT NULL,
     expires_at TIMESTAMP    NOT NULL,

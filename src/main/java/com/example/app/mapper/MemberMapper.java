@@ -14,7 +14,7 @@ public interface MemberMapper {
 
     void insert(MemberDto member);
 
-    void saveRefreshToken(@Param("memberId") Long memberId, @Param("refreshToken") String refreshToken);
+    void saveRefreshToken(@Param("memberId") Long memberId, @Param("refreshToken") String refreshToken, @Param("expiresAt") java.time.LocalDateTime expiresAt);
 
     void deleteRefreshToken(@Param("memberId") Long memberId);
 

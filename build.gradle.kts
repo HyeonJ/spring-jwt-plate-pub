@@ -60,4 +60,5 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    systemProperty("javax.xml.accessExternalDTD", "all")
 }
